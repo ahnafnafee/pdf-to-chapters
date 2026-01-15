@@ -1,0 +1,15 @@
+[project]
+name = "pdf-to-chapters"
+version = "0.1.0"
+description = "Split PDFs into chapters based on bookmarks using AI inference"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pymupdf>=1.24.0",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[tool.uv]
+package = false
+link-mode = "copy"
