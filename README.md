@@ -16,7 +16,7 @@ A Python CLI tool that automatically extracts chapters from PDF files based on b
 
 -   Python 3.10+
 -   [uv](https://github.com/astral-sh/uv) package manager
--   OpenAI-compatible API key (supports ZipuAI, OpenAI, or any compatible provider)
+-   OpenAI-compatible API key (supports ZhipuAI, OpenAI, or any compatible provider)
 
 ## 🚀 Installation
 
