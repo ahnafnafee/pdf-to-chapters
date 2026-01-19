@@ -10,24 +10,68 @@ def extract_toc_text(pdf_path: str, max_pages: int = 20) -> tuple[str, int]:
     """
     Extract text from the first pages of the PDF to find TOC.
     Returns the TOC text and the PDF page number where TOC starts (1-indexed).
+    
+    Detection methods:
+    1. Look for pages containing 'contents' or 'table of contents'
+    2. Look for pages with section numbering patterns (e.g., "1.1", "2.3.4") 
+       combined with page numbers
+    3. Look for pages with common chapter/section keywords followed by numbers
     """
     doc = fitz.open(pdf_path)
     toc_text = []
     toc_start_page = None
     
+    # Patterns that indicate TOC content:
+    # 1. Section numbers like "1.1", "2.3", "3.2.1" 
+    section_pattern = re.compile(r'\b\d+\.\d+(?:\.\d+)?\b')
+    # 2. Page numbers at end of lines or after titles
+    page_num_pattern = re.compile(r'\s\d{1,3}(?:\s|$|\n)')
+    # 3. Common TOC keywords
+    toc_keywords = ['chapter', 'preface', 'introduction', 'appendix', 'index', 'exercises']
+    
     for i in range(min(max_pages, doc.page_count)):
         text = doc[i].get_text()
-        # Look for TOC indicators
-        if any(indicator in text.lower() for indicator in ['contents', 'table of contents']):
+        text_lower = text.lower()
+        
+        # Method 1: Look for explicit TOC indicators
+        has_contents_header = any(
+            indicator in text_lower 
+            for indicator in ['contents', 'table of contents']
+        )
+        
+        # Method 2: Heuristic - look for TOC-like patterns
+        # A TOC page typically has:
+        # - Multiple section numbers (1.1, 1.2, 2.1, etc.)
+        # - Multiple page numbers 
+        # - Keywords like chapter, preface, etc.
+        section_matches = len(section_pattern.findall(text))
+        page_num_matches = len(page_num_pattern.findall(text))
+        keyword_matches = sum(1 for kw in toc_keywords if kw in text_lower)
+        
+        # Consider it a TOC page if:
+        # - Has section patterns AND page numbers
+        # - OR has TOC keywords AND page numbers
+        has_toc_pattern = (
+            (section_matches >= 3 and page_num_matches >= 5) or
+            (keyword_matches >= 2 and page_num_matches >= 5) or
+            (section_matches >= 5)  # Many section numbers alone is strong indicator
+        )
+        
+        if has_contents_header or has_toc_pattern:
             if toc_start_page is None:
                 toc_start_page = i + 1  # 1-indexed
             toc_text.append(f"=== PDF Page {i + 1} ===\n{text}")
         elif toc_start_page is not None:
             # Continue collecting pages after TOC starts (might span multiple pages)
-            # Stop if we hit a chapter start or too much content
-            if len(toc_text) < 15:  # TOC shouldn't be more than ~15 pages
-                toc_text.append(f"=== PDF Page {i + 1} ===\n{text}")
+            # Check if this page also looks like TOC continuation
+            still_toc = (section_matches >= 2 or page_num_matches >= 3)
+            if still_toc or len(toc_text) < 3:
+                if len(toc_text) < 15:  # TOC shouldn't be more than ~15 pages
+                    toc_text.append(f"=== PDF Page {i + 1} ===\n{text}")
+                else:
+                    break
             else:
+                # Likely past the TOC
                 break
     
     doc.close()

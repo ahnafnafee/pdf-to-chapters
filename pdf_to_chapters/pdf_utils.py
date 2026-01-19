@@ -95,3 +95,35 @@ def split_pdf_by_chapters(pdf_path: str, chapter_ranges: list[dict], output_dir:
     
     doc.close()
     return output_files
+
+
+def add_bookmarks_to_pdf(pdf_path: str, chapter_ranges: list[dict], output_path: str) -> str:
+    """
+    Add chapter bookmarks to a PDF file and save to output_path.
+    
+    Args:
+        pdf_path: Path to the source PDF
+        chapter_ranges: List of dicts with 'title' and 'start_page' keys
+        output_path: Where to save the bookmarked PDF
+    
+    Returns:
+        The output path
+    """
+    doc = fitz.open(pdf_path)
+    
+    # Build TOC structure for PyMuPDF
+    # Format: [level, title, page_number, ...]
+    # Level 1 = top-level bookmark
+    toc = []
+    for chapter in chapter_ranges:
+        # PyMuPDF uses 1-indexed page numbers for set_toc
+        toc.append([1, chapter["title"], chapter["start_page"]])
+    
+    # Set the TOC (bookmarks)
+    doc.set_toc(toc)
+    
+    # Save the modified PDF
+    doc.save(output_path, garbage=4, deflate=True)
+    doc.close()
+    
+    return output_path

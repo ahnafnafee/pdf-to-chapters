@@ -6,17 +6,17 @@ A Python CLI tool that automatically extracts chapters from PDF files based on b
 
 ## ✨ Features
 
--   **Bookmark-based extraction** — Analyzes PDF bookmarks to identify main chapters
--   **TOC fallback** — Automatically extracts chapters from Table of Contents for PDFs without bookmarks
--   **AI-powered analysis** — Uses LLM to distinguish primary chapters from sub-sections, appendices, and front matter
--   **Smart page offset** — Calculates correct page mappings for accurate chapter splitting
--   **Organized output** — Creates a folder per book with sequentially numbered chapter PDFs
+- **Bookmark-based extraction** — Analyzes PDF bookmarks to identify main chapters
+- **TOC fallback** — Automatically extracts chapters from Table of Contents for PDFs without bookmarks
+- **AI-powered analysis** — Uses LLM to distinguish primary chapters from sub-sections, appendices, and front matter
+- **Smart page offset** — Calculates correct page mappings for accurate chapter splitting
+- **Organized output** — Creates a folder per book with sequentially numbered chapter PDFs
 
 ## 📋 Requirements
 
--   Python 3.10+
--   [uv](https://github.com/astral-sh/uv) package manager
--   OpenAI-compatible API key (supports ZhipuAI, OpenAI, or any compatible provider)
+- Python 3.10+
+- [uv](https://github.com/astral-sh/uv) package manager
+- OpenAI-compatible API key (supports ZhipuAI, OpenAI, or any compatible provider)
 
 ## 🚀 Installation
 
@@ -52,17 +52,21 @@ uv run pdf_to_chapters.py -i textbook.pdf -o ./output
 
 # Preview bookmarks without splitting
 uv run pdf_to_chapters.py -i textbook.pdf --list-bookmarks
+
+# Add bookmarks to PDF instead of splitting (for PDFs without bookmarks)
+uv run pdf_to_chapters.py -i textbook.pdf --add-bookmarks
 ```
 
 ### Command Options
 
-| Option                 | Description                               |
-| ---------------------- | ----------------------------------------- |
-| `-i, --input`          | Path to input PDF file (required)         |
-| `-o, --output-dir`     | Output directory (default: same as input) |
-| `-k, --api-key`        | API key (or use OPENAI_API_KEY env var)   |
-| `-u, --api-url`        | API base URL (or use OPENAI_URL env var)  |
-| `-l, --list-bookmarks` | List bookmarks/TOC without splitting      |
+| Option                 | Description                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| `-i, --input`          | Path to input PDF file (required)                                              |
+| `-o, --output-dir`     | Output directory (default: same as input)                                      |
+| `-k, --api-key`        | API key (or use OPENAI_API_KEY env var)                                        |
+| `-u, --api-url`        | API base URL (or use OPENAI_URL env var)                                       |
+| `-l, --list-bookmarks` | List bookmarks/TOC without splitting                                           |
+| `-b, --add-bookmarks`  | Add chapter bookmarks to PDF instead of splitting (for PDFs without bookmarks) |
 
 ## 📁 Output Structure
 

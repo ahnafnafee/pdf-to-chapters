@@ -20,7 +20,7 @@ def get_ai_client(api_key: str, base_url: str) -> OpenAI:
     )
 
 
-def get_primary_chapters_from_ai(bookmarks: list[dict], api_key: str, base_url: str) -> list[str]:
+def get_primary_chapters_from_ai(bookmarks: list[dict], api_key: str, base_url: str, model: str = "glm-4.7") -> list[str]:
     """Use AI to identify the primary/top-level chapters from bookmarks."""
     client = get_ai_client(api_key, base_url)
     
@@ -42,7 +42,7 @@ Return ONLY a valid JSON array of chapter titles, nothing else. Example format:
 ["Chapter 1: Introduction", "Chapter 2: Getting Started", "Chapter 3: Advanced Topics"]"""
 
     response = client.chat.completions.create(
-        model="glm-4.7",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a helpful assistant that analyzes document structures. Always respond with valid JSON only."},
             {"role": "user", "content": prompt}
@@ -77,7 +77,7 @@ Return ONLY a valid JSON array of chapter titles, nothing else. Example format:
     return chapters
 
 
-def parse_toc_with_ai(toc_text: str, api_key: str, base_url: str) -> list[dict]:
+def parse_toc_with_ai(toc_text: str, api_key: str, base_url: str, model: str = "glm-4.7") -> list[dict]:
     """
     Use AI to parse TOC text and extract chapter titles with their page numbers.
     Returns list of dicts with 'title' and 'toc_page' keys.
@@ -100,7 +100,7 @@ Return ONLY a valid JSON array. Example format:
 [{{"title": "1 Introduction", "toc_page": 1}}, {{"title": "2 Linear Algebra", "toc_page": 31}}]"""
 
     response = client.chat.completions.create(
-        model="glm-4.7",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a helpful assistant that parses document structures. Always respond with valid JSON only."},
             {"role": "user", "content": prompt}

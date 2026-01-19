@@ -8,6 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from pdf_to_chapters.pdf_utils import (
+    add_bookmarks_to_pdf,
     extract_bookmarks,
     get_chapter_page_ranges,
     get_total_pages,
@@ -60,6 +61,11 @@ Examples:
         action="store_true",
         help="Just list all bookmarks and exit"
     )
+    parser.add_argument(
+        "--add-bookmarks", "-b",
+        action="store_true",
+        help="Add chapter bookmarks to the PDF instead of splitting (for PDFs without bookmarks)"
+    )
     
     return parser.parse_args()
 
@@ -70,6 +76,7 @@ def process_with_bookmarks(
     total_pages: int,
     api_key: str,
     api_url: str,
+    model: str,
     list_only: bool
 ) -> list[dict]:
     """Process a PDF that has bookmarks."""
@@ -83,7 +90,7 @@ def process_with_bookmarks(
     
     # Get primary chapters from AI
     print("\nAnalyzing bookmarks with AI to identify primary chapters...")
-    primary_chapters = get_primary_chapters_from_ai(bookmarks, api_key, api_url)
+    primary_chapters = get_primary_chapters_from_ai(bookmarks, api_key, api_url, model)
     
     if not primary_chapters:
         print("Error: Could not identify any primary chapters")
@@ -101,6 +108,7 @@ def process_without_bookmarks(
     total_pages: int,
     api_key: str,
     api_url: str,
+    model: str,
     list_only: bool
 ) -> list[dict]:
     """Process a PDF that has no bookmarks using TOC extraction."""
@@ -123,7 +131,7 @@ def process_without_bookmarks(
     
     # Parse TOC with AI
     print("\nAnalyzing TOC with AI to identify chapters and page numbers...")
-    toc_chapters = parse_toc_with_ai(toc_text, api_key, api_url)
+    toc_chapters = parse_toc_with_ai(toc_text, api_key, api_url, model)
     
     if not toc_chapters:
         print("Error: Could not parse chapters from TOC")
@@ -147,12 +155,14 @@ def main():
     # Get API configuration from args, env vars, or .env file (only needed if not listing bookmarks)
     api_key = None
     api_url = None
+    model = None
     if not args.list_bookmarks:
         api_key = args.api_key or os.environ.get("OPENAI_API_KEY")
         if not api_key:
             print("Error: API key required. Use --api-key or set OPENAI_API_KEY in .env file")
             sys.exit(1)
         api_url = args.api_url or os.environ.get("OPENAI_URL", "https://api.z.ai/api/paas/v4")
+        model = os.environ.get("OPENAI_MODEL", "glm-4.7")
     
     # Validate input file
     pdf_path = Path(args.input)
@@ -172,16 +182,31 @@ def main():
     # Process based on whether bookmarks exist
     if bookmarks:
         chapter_ranges = process_with_bookmarks(
-            pdf_path, bookmarks, total_pages, api_key, api_url, args.list_bookmarks
+            pdf_path, bookmarks, total_pages, api_key, api_url, model, args.list_bookmarks
         )
     else:
         chapter_ranges = process_without_bookmarks(
-            pdf_path, total_pages, api_key, api_url, args.list_bookmarks
+            pdf_path, total_pages, api_key, api_url, model, args.list_bookmarks
         )
     
     if not chapter_ranges:
         print("Error: Could not determine page ranges for chapters")
         sys.exit(1)
+    
+    # Handle --add-bookmarks mode: inject bookmarks instead of splitting
+    if args.add_bookmarks:
+        # Determine output path
+        if args.output_dir:
+            output_dir = Path(args.output_dir)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / f"{pdf_path.stem}_bookmarked.pdf"
+        else:
+            output_path = pdf_path.parent / f"{pdf_path.stem}_bookmarked.pdf"
+        
+        print(f"\nAdding {len(chapter_ranges)} chapter bookmarks to PDF...")
+        add_bookmarks_to_pdf(str(pdf_path), chapter_ranges, str(output_path))
+        print(f"\nDone! Created bookmarked PDF: {output_path}")
+        return
     
     # Setup output directory - always create folder named after the textbook
     pdf_name = sanitize_filename(pdf_path.stem)
